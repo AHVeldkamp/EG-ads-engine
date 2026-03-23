@@ -9,5 +9,5 @@ export const envValidationSchema = Joi.object({
   META_ACCESS_TOKEN: Joi.string().optional().allow(''),
   META_APP_ID: Joi.string().optional().allow(''),
   META_APP_SECRET: Joi.string().optional().allow(''),
-  GEMINI_API_KEY: Joi.string().optional().allow(''),
+  GEMINI_API_KEY: Joi.string().required(),
 });
