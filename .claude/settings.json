@@ -1,0 +1,46 @@
+{
+  "permissions": {
+    "defaultMode": "acceptEdits",
+    "allow": [
+      "Read(*)",
+      "Write(specs/**)",
+      "Bash(npm run build*)",
+      "Bash(npm run test*)",
+      "Bash(npm run lint*)",
+      "Bash(npx jest*)",
+      "Bash(npx prisma*)",
+      "Bash(git status*)",
+      "Bash(git diff*)",
+      "Bash(git log*)",
+      "Bash(git add*)",
+      "Bash(git commit*)",
+      "Bash(git branch*)",
+      "Bash(git checkout*)",
+      "Bash(git switch*)",
+      "Bash(git show*)",
+      "Bash(git stash*)",
+      "Bash(find *)",
+      "Bash(cat *)",
+      "Bash(ls*)",
+      "Bash(head *)",
+      "Bash(tail *)",
+      "Bash(grep *)",
+      "Bash(wc *)",
+      "Bash(pwd*)",
+      "Bash(which *)",
+      "Bash(echo *)",
+      "WebSearch"
+    ],
+    "deny": [
+      "Write(.env*)",
+      "Write(test/**)",
+      "Edit(test/**)",
+      "Bash(rm -rf *)",
+      "Bash(npm install*)",
+      "Bash(npm uninstall*)"
+    ]
+  },
+  "env": {
+    "CLAUDE_CODE_EXPERIMENTAL_AGENT_TEAMS": "1"
+  }
+}
