@@ -1,0 +1,32 @@
+# compiled output
+dist/
+
+# dependencies
+node_modules/
+
+# environment
+.env
+
+# IDE
+.idea/
+.vscode/
+*.swp
+*.swo
+
+# OS
+.DS_Store
+
+# debug
+npm-debug.log*
+
+# source maps
+*.js.map
+
+# coverage
+coverage/
+
+# typescript build info
+*.tsbuildinfo
+
+# prisma
+prisma/*.db
