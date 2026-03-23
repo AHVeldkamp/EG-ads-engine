@@ -99,3 +99,31 @@ model Ad {
 
   @@map("ads")
 }
+
+enum PipelineStatus {
+  PENDING
+  GENERATING_CREATIVE
+  CREATING_CAMPAIGN
+  CREATING_AD_SET
+  CREATING_AD
+  PUBLISHING
+  COMPLETED
+  FAILED
+}
+
+model Pipeline {
+  id             String          @id @default(uuid())
+  status         PipelineStatus  @default(PENDING)
+  prompt         String
+  config         Json
+  creativeId     String?
+  campaignId     String?
+  adSetId        String?
+  adId           String?
+  failedStep     String?
+  errorMessage   String?
+  createdAt      DateTime        @default(now())
+  updatedAt      DateTime        @updatedAt
+
+  @@map("pipelines")
+}

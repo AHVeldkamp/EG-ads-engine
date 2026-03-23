@@ -7,5 +7,6 @@ import { AdSetsService } from './ad-sets.service';
   imports: [MetaApiModule],
   controllers: [AdSetsController],
   providers: [AdSetsService],
+  exports: [AdSetsService],
 })
 export class AdSetsModule {}

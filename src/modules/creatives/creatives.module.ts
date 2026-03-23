@@ -7,5 +7,6 @@ import { CreativesService } from './creatives.service';
   imports: [GeminiModule],
   controllers: [CreativesController],
   providers: [CreativesService],
+  exports: [CreativesService],
 })
 export class CreativesModule {}
