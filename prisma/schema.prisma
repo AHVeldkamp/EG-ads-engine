@@ -125,6 +125,17 @@ enum PipelineStatus {
   FAILED
 }
 
+model MetaToken {
+  id          String   @id @default("singleton")
+  accessToken String
+  expiresAt   DateTime
+  refreshedAt DateTime @default(now())
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
+
+  @@map("meta_tokens")
+}
+
 model Pipeline {
   id             String          @id @default(uuid())
   status         PipelineStatus  @default(PENDING)

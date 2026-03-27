@@ -1,6 +1,7 @@
-import { Injectable, Logger } from '@nestjs/common';
+import { Injectable, Logger, OnModuleInit } from '@nestjs/common';
 import { ConfigService } from '@nestjs/config';
 import * as bizSdk from 'facebook-nodejs-business-sdk';
+import { MetaTokenService } from './meta-token.service';
 
 const FacebookAdsApi =
   (bizSdk as any).FacebookAdsApi ?? (bizSdk as any).default?.FacebookAdsApi;
@@ -52,22 +53,42 @@ export interface MetaAdParams {
 }
 
 @Injectable()
-export class MetaApiService {
+export class MetaApiService implements OnModuleInit {
   private readonly logger = new Logger(MetaApiService.name);
   private readonly adAccountId: string;
   private readonly pageId: string;
 
-  constructor(private readonly configService: ConfigService) {
-    const accessToken =
-      this.configService.get<string>('META_ACCESS_TOKEN') ?? '';
+  constructor(
+    private readonly configService: ConfigService,
+    private readonly metaTokenService: MetaTokenService,
+  ) {
+    this.adAccountId =
+      this.configService.get<string>('META_AD_ACCOUNT_ID') ?? '';
+    this.pageId = this.configService.get<string>('META_PAGE_ID') ?? '';
+  }
+
+  onModuleInit(): void {
+    // Initialize the SDK with the current token from MetaTokenService
+    const accessToken = this.metaTokenService.getAccessToken();
     const appId = this.configService.get<string>('META_APP_ID') ?? '';
     const appSecret = this.configService.get<string>('META_APP_SECRET') ?? '';
 
     FacebookAdsApi.init(accessToken, appId, appSecret);
 
-    this.adAccountId =
-      this.configService.get<string>('META_AD_ACCOUNT_ID') ?? '';
-    this.pageId = this.configService.get<string>('META_PAGE_ID') ?? '';
+    // Register callback so MetaTokenService can re-init the SDK on refresh
+    this.metaTokenService.setReinitializeCallback((newToken: string) => {
+      this.reinitialize(newToken);
+    });
+  }
+
+  /**
+   * Re-initialize the Facebook SDK with a new access token.
+   */
+  reinitialize(newToken: string): void {
+    const appId = this.configService.get<string>('META_APP_ID') ?? '';
+    const appSecret = this.configService.get<string>('META_APP_SECRET') ?? '';
+    FacebookAdsApi.init(newToken, appId, appSecret);
+    this.logger.log('Facebook SDK re-initialized with new token');
   }
 
   getPageId(): string {
