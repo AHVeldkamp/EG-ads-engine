@@ -1,8 +1,9 @@
 import { Injectable, Logger } from '@nestjs/common';
 import { ConfigService } from '@nestjs/config';
-import bizSdk from 'facebook-nodejs-business-sdk';
+import * as bizSdk from 'facebook-nodejs-business-sdk';
 
-const { FacebookAdsApi, AdAccount } = bizSdk;
+const FacebookAdsApi = (bizSdk as any).FacebookAdsApi ?? (bizSdk as any).default?.FacebookAdsApi;
+const AdAccount = (bizSdk as any).AdAccount ?? (bizSdk as any).default?.AdAccount;
 
 export interface MetaCampaignParams {
   name: string;
