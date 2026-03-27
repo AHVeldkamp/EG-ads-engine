@@ -100,6 +100,20 @@ model Ad {
   @@map("ads")
 }
 
+model BrandAsset {
+  id        String   @id @default(uuid())
+  name      String
+  type      String
+  filePath  String
+  mimeType  String
+  width     Int
+  height    Int
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  @@map("brand_assets")
+}
+
 enum PipelineStatus {
   PENDING
   GENERATING_CREATIVE

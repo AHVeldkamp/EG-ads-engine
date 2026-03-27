@@ -10,12 +10,26 @@ import * as fs from 'fs';
 import * as path from 'path';
 import { PrismaService } from '../../prisma/prisma.service';
 import { GeminiService } from '../gemini/gemini.service';
+import { BrandAssetsService } from '../brand-assets/brand-assets.service';
+import {
+  ImageCompositeService,
+  BrandAssetPosition,
+} from '../../common/image-composite.service';
 import {
   GenerateCreativeDto,
   EditCreativeDto,
   ListCreativesQueryDto,
 } from './creatives.dto';
 import { UPLOAD_DIR, DEFAULT_MODEL } from './creatives.types';
+
+export interface GenerateWithSeedImageOptions {
+  prompt: string;
+  tags?: string[];
+  seedImage?: Express.Multer.File;
+  brandAssetId?: string;
+  brandAssetPosition?: string;
+  brandAssetScale?: number;
+}
 
 @Injectable()
 export class CreativesService {
@@ -24,6 +38,8 @@ export class CreativesService {
   constructor(
     private readonly prisma: PrismaService,
     private readonly geminiService: GeminiService,
+    private readonly brandAssetsService: BrandAssetsService,
+    private readonly imageCompositeService: ImageCompositeService,
   ) {}
 
   async generate(dto: GenerateCreativeDto): Promise<Creative> {
@@ -62,6 +78,104 @@ export class CreativesService {
       this.logger.log(`Creative ${creative.id} generated successfully`);
       return updated;
     } catch (error) {
+      const errorMessage =
+        error instanceof Error ? error.message : String(error);
+
+      await this.prisma.creative.update({
+        where: { id: creative.id },
+        data: {
+          status: CreativeStatus.FAILED,
+          errorMessage,
+        },
+      });
+
+      this.logger.warn(
+        `Creative ${creative.id} generation failed: ${errorMessage}`,
+      );
+      throw new UnprocessableEntityException(
+        `Image generation failed: ${errorMessage}`,
+      );
+    }
+  }
+
+  async generateWithSeedImage(
+    options: GenerateWithSeedImageOptions,
+  ): Promise<Creative> {
+    const creative = await this.prisma.creative.create({
+      data: {
+        prompt: options.prompt,
+        tags: options.tags ?? [],
+        status: CreativeStatus.PENDING,
+      },
+    });
+
+    await this.prisma.creative.update({
+      where: { id: creative.id },
+      data: { status: CreativeStatus.GENERATING },
+    });
+
+    try {
+      let imageBuffer: Buffer;
+
+      if (options.seedImage) {
+        imageBuffer = await this.geminiService.generateFromSeedImage(
+          options.seedImage.buffer,
+          options.seedImage.mimetype,
+          options.prompt,
+          DEFAULT_MODEL,
+        );
+      } else {
+        imageBuffer = await this.geminiService.generateImage(
+          options.prompt,
+          DEFAULT_MODEL,
+        );
+      }
+
+      if (options.brandAssetId) {
+        const { buffer: overlayBuffer } =
+          await this.brandAssetsService.getImageBuffer(options.brandAssetId);
+
+        const position = (options.brandAssetPosition ??
+          'bottom-right') as BrandAssetPosition;
+        const scale = options.brandAssetScale ?? 25;
+
+        imageBuffer = await this.imageCompositeService.compositeOverlay(
+          imageBuffer,
+          overlayBuffer,
+          position,
+          scale,
+        );
+      }
+
+      fs.mkdirSync(UPLOAD_DIR, { recursive: true });
+
+      const imagePath = path.join(UPLOAD_DIR, `${creative.id}.png`);
+      fs.writeFileSync(imagePath, imageBuffer);
+
+      const updated = await this.prisma.creative.update({
+        where: { id: creative.id },
+        data: {
+          imagePath,
+          status: CreativeStatus.COMPLETED,
+        },
+      });
+
+      this.logger.log(
+        `Creative ${creative.id} generated successfully (seed: ${!!options.seedImage}, brandAsset: ${!!options.brandAssetId})`,
+      );
+      return updated;
+    } catch (error) {
+      if (error instanceof NotFoundException) {
+        await this.prisma.creative.update({
+          where: { id: creative.id },
+          data: {
+            status: CreativeStatus.FAILED,
+            errorMessage: error.message,
+          },
+        });
+        throw error;
+      }
+
       const errorMessage =
         error instanceof Error ? error.message : String(error);
 

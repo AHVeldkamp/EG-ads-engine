@@ -9,6 +9,7 @@ import { CampaignsModule } from './modules/campaigns/campaigns.module';
 import { AdSetsModule } from './modules/ad-sets/ad-sets.module';
 import { AdsModule } from './modules/ads/ads.module';
 import { PipelinesModule } from './modules/pipelines/pipelines.module';
+import { BrandAssetsModule } from './modules/brand-assets/brand-assets.module';
 import { AppController } from './app.controller';
 import { AppService } from './app.service';
 
@@ -26,6 +27,7 @@ import { AppService } from './app.service';
     AdSetsModule,
     AdsModule,
     PipelinesModule,
+    BrandAssetsModule,
   ],
   controllers: [AppController],
   providers: [AppService],

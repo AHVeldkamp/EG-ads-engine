@@ -5,6 +5,9 @@ import {
   IsArray,
   IsEnum,
   IsInt,
+  IsUUID,
+  IsIn,
+  IsNumber,
   Min,
   Max,
   MinLength,
@@ -32,6 +35,38 @@ export class GenerateCreativeDto {
   @MaxLength(MAX_TAG_LENGTH, { each: true })
   @ArrayMaxSize(MAX_TAGS)
   tags?: string[];
+}
+
+export class GenerateCreativeMultipartDto {
+  @IsString()
+  @MinLength(1)
+  @MaxLength(MAX_PROMPT_LENGTH)
+  prompt!: string;
+
+  @IsOptional()
+  tags?: string | string[];
+
+  @IsOptional()
+  @IsUUID()
+  brandAssetId?: string;
+
+  @IsOptional()
+  @IsIn([
+    'top-left',
+    'top-right',
+    'top-center',
+    'bottom-left',
+    'bottom-right',
+    'bottom-center',
+  ])
+  brandAssetPosition?: string;
+
+  @IsOptional()
+  @Type(() => Number)
+  @IsNumber()
+  @Min(5)
+  @Max(50)
+  brandAssetScale?: number;
 }
 
 export class EditCreativeDto {

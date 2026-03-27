@@ -67,6 +67,44 @@ export class GeminiService {
     }
   }
 
+  async generateFromSeedImage(
+    seedImageBuffer: Buffer,
+    seedMimeType: string,
+    prompt: string,
+    model: string,
+  ): Promise<Buffer> {
+    this.logger.log(
+      `Generating from seed image with model ${model}, prompt length: ${prompt.length}`,
+    );
+
+    try {
+      const base64Image = seedImageBuffer.toString('base64');
+
+      const response = await this.ai.models.generateContent({
+        model,
+        contents: [
+          {
+            role: 'user',
+            parts: [
+              { inlineData: { data: base64Image, mimeType: seedMimeType } },
+              {
+                text: `Create a completely NEW original image inspired by the attached seed/reference image. Do NOT edit or modify the seed image directly. Use it only as visual inspiration for style, composition, and mood. Prompt: ${prompt}`,
+              },
+            ],
+          },
+        ],
+        config: { responseModalities: ['TEXT', 'IMAGE'] },
+      });
+
+      return this.extractImageFromResponse(response);
+    } catch (error) {
+      this.logger.warn(
+        `Seed image generation failed: ${error instanceof Error ? error.message : String(error)}`,
+      );
+      throw error;
+    }
+  }
+
   private extractImageFromResponse(response: unknown): Buffer {
     const resp = response as {
       candidates?: Array<{

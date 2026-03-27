@@ -6,13 +6,17 @@ import {
   Param,
   Body,
   Query,
+  Req,
   HttpCode,
   HttpStatus,
   StreamableFile,
   Res,
   ParseUUIDPipe,
+  UseInterceptors,
+  UploadedFile,
 } from '@nestjs/common';
-import { Response } from 'express';
+import { FileInterceptor } from '@nestjs/platform-express';
+import { Request, Response } from 'express';
 import { CreativesService } from './creatives.service';
 import {
   GenerateCreativeDto,
@@ -26,8 +30,31 @@ export class CreativesController {
 
   @Post('generate')
   @HttpCode(HttpStatus.CREATED)
-  generate(@Body() dto: GenerateCreativeDto) {
-    return this.creativesService.generate(dto);
+  @UseInterceptors(FileInterceptor('seedImage', { storage: undefined }))
+  generate(
+    @Req() req: Request,
+    @Body() body: Record<string, unknown>,
+    @UploadedFile() seedImage?: Express.Multer.File,
+  ) {
+    const contentType = req.headers['content-type'] ?? '';
+
+    if (contentType.includes('multipart/form-data')) {
+      const tags = this.parseTags(body.tags);
+      return this.creativesService.generateWithSeedImage({
+        prompt: body.prompt as string,
+        tags,
+        seedImage: seedImage ?? undefined,
+        brandAssetId: body.brandAssetId as string | undefined,
+        brandAssetPosition: body.brandAssetPosition as string | undefined,
+        brandAssetScale: body.brandAssetScale
+          ? Number(body.brandAssetScale)
+          : undefined,
+      });
+    }
+
+    return this.creativesService.generate(
+      body as unknown as GenerateCreativeDto,
+    );
   }
 
   @Post(':id/edit')
@@ -69,5 +96,19 @@ export class CreativesController {
   @HttpCode(HttpStatus.NO_CONTENT)
   remove(@Param('id', new ParseUUIDPipe()) id: string) {
     return this.creativesService.remove(id);
+  }
+
+  private parseTags(tags: unknown): string[] | undefined {
+    if (!tags) return undefined;
+    if (Array.isArray(tags)) return tags;
+    if (typeof tags === 'string') {
+      try {
+        const parsed = JSON.parse(tags);
+        if (Array.isArray(parsed)) return parsed;
+      } catch {
+        return [tags];
+      }
+    }
+    return undefined;
   }
 }
